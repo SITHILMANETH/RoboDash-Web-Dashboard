@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>RoboDash · Sign in</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <form class="login" id="form" autocomplete="on">
+      <h1>RoboDash Control</h1>
+      <p class="sub">Sign in to manage the live dashboard.</p>
+      <label for="u">Username</label>
+      <input id="u" name="username" type="text" autocomplete="username" required maxlength="64" autofocus>
+      <label for="p">Password</label>
+      <input id="p" name="password" type="password" autocomplete="current-password" required maxlength="200">
+      <div class="err" id="err" hidden></div>
+      <div class="row end mt"><button class="btn primary" id="go" type="submit">Sign in</button></div>
+    </form>
+  </div>
+  <script src="/admin/login.js"></script>
+</body>
+</html>

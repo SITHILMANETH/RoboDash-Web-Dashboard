@@ -1,0 +1,26 @@
+{
+  "name": "robodash-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RoboDash live event dashboard with a secured admin backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "create-admin": "node scripts/create-admin.js",
+    "test": "node scripts/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.10",
+    "express": "^4.22.3",
+    "express-rate-limit": "^8.7.5",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "memorystore": "^1.6.8",
+    "multer": "^2.5.0"
+  }
+}

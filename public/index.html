@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RoboDash Live</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="color-scheme" content="dark">
+  <link rel="preload" href="/fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true">
+    <svg class="track" viewBox="0 0 1600 900" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="trackGrad" x1="0" x2="1"><stop offset="0" stop-color="#2cc8ff"/><stop offset=".5" stop-color="#a65bff"/><stop offset="1" stop-color="#8cc63f"/></linearGradient>
+      </defs>
+      <path class="base" id="trk" d="M-40 760 C 200 760 260 520 480 560 S 760 860 960 700 S 1180 300 1400 380 S 1560 560 1660 420"/>
+      <path class="run" d="M-40 760 C 200 760 260 520 480 560 S 760 860 960 700 S 1180 300 1400 380 S 1560 560 1660 420"/>
+    </svg>
+  </div>
+
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="mark" id="mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="10" rx="3"/><path d="M12 8V4M9 13h.01M15 13h.01M3 13v2M21 13v2"/></svg>
+        </div>
+        <div><h1 id="title">RoboDash</h1><p id="subtitle"></p></div>
+      </div>
+      <div class="meta">
+        <span class="chip" id="countdownChip" hidden>STARTS IN <b id="countdown"></b></span>
+        <span class="chip" id="venueChip" hidden></span>
+        <span class="chip" title="Connection"><span class="dot off" id="conn"></span><span id="connText">CONNECTING</span></span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="left">
+        <!-- MAIN STREAM -->
+        <div class="card stream">
+          <div class="stream-in">
+            <iframe id="streamFrame" title="Live stream" hidden
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              referrerpolicy="strict-origin-when-cross-origin"
+              sandbox="allow-scripts allow-same-origin allow-presentation" allowfullscreen></iframe>
+            <div class="standby" id="standby">
+              <div>
+                <div class="pulse-ring"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="10" rx="3"/><path d="M12 8V4M9 13h.01M15 13h.01M3 13v2M21 13v2"/></svg></div>
+                <h2 id="standbyTitle">RoboDash</h2>
+                <p id="standbyMsg">Live stream starting soon</p>
+                <div class="count" id="standbyCount" hidden>
+                  <div><b id="cd-d">0</b><span>Days</span></div><div><b id="cd-h">0</b><span>Hours</span></div><div><b id="cd-m">0</b><span>Min</span></div><div><b id="cd-s">0</b><span>Sec</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="badge-live" id="liveBadge" hidden><i></i>LIVE</div>
+            <div class="clock" aria-label="Current time"><span class="t" id="clkT">--:--</span><span class="s" id="clkS">--</span><span class="d" id="clkD"></span></div>
+          </div>
+        </div>
+
+        <!-- FUN FACTS / CURRENT TEAMS STRIP -->
+        <div class="card ticker">
+          <div class="tag idle" id="tickTag"><span class="dot"></span><span id="tickTagText">Did you know</span></div>
+          <div class="msg" id="tickMsg"></div>
+        </div>
+
+        <!-- ADS -->
+        <div class="ads" id="ads">
+          <div class="ad"></div><div class="ad"></div><div class="ad"></div>
+        </div>
+      </section>
+
+      <aside class="right">
+        <!-- TEAMS -->
+        <section class="card">
+          <div class="card-head"><span>Teams in competition</span><span class="count" id="teamCount"></span></div>
+          <div class="ss-stage" id="teamStage"></div>
+          <div class="ss-bar"><i id="teamBar"></i></div>
+        </section>
+        <!-- ORGANISATION -->
+        <section class="card">
+          <div class="card-head"><span>Organisation &amp; news</span><span class="count" id="orgCount"></span></div>
+          <div class="ss-stage" id="orgStage"></div>
+          <div class="ss-bar"><i id="orgBar"></i></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
