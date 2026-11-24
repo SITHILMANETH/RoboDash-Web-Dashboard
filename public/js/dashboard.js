@@ -206,6 +206,27 @@
   setInterval(tick, 1000); tick();
 
   /* ---------------- data loading ---------------- */
+  const fullscreenBtn = $('#fullscreenBtn');
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+    } catch (error) {
+      setConn(false);
+    }
+  }
+  function updateFullscreenButton() {
+    const active = !!document.fullscreenElement;
+    fullscreenBtn.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
+    fullscreenBtn.setAttribute('aria-label', fullscreenBtn.title);
+  }
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', updateFullscreenButton);
+  document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'f' && !event.ctrlKey && !event.metaKey && !event.altKey) toggleFullscreen();
+  });
+  updateFullscreenButton();
+
   function apply(st) {
     state = st;
     renderEvent(st); renderStream(st);
