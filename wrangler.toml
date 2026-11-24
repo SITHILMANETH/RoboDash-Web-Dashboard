@@ -3,15 +3,12 @@ main = "src/worker.js"
 compatibility_date = "2026-11-24"
 
 [assets]
-directory = "."
+directory = "public"
 binding = "ASSETS"
 run_worker_first = true
 
 [vars]
-GOOGLE_CLIENT_ID = "794264608590-t0d3n6uu510bgq7i719amqmbjvnn03ch.apps.googleusercontent.com"
-SUPER_ADMIN_EMAIL = "simaneth@gmail.com"
-
-[[d1_databases]]
-binding = "robodash_db"
-database_name = "robodash-db"
-database_id = "5db226a5-1e28-4beb-af03-54d622c8d66e"
+SUPABASE_URL = "https://rdhzijkdhuqhfmxgkpnf.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_QXdfxzmEjCtRLHOnrUBCrA_jtKunf1r"
+SUPABASE_ADMIN_EMAIL = "simaneth@gmail.com"
+SUPABASE_ADMIN_USERNAME = "maneth##rox"

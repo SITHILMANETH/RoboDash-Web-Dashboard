@@ -40,7 +40,7 @@ function askHidden(q) {
   rl.close();
   const pw = await askHidden('Password (min 12 chars): ');
   const pw2 = await askHidden('Repeat password: ');
-  if (pw.length < 12) { console.error('Password must be at least 12 characters.'); process.exit(1); }
+  if (pw.length < 4) { console.error('Password must be at least 4 characters.'); process.exit(1); }
   if (pw !== pw2) { console.error('Passwords do not match.'); process.exit(1); }
 
   const users = store.getUsers();

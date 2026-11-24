@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>RoboDash · Control panel</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-app">
+    <header class="admin-header">
+      <a class="brand" href="/" aria-label="RoboDash dashboard"><span class="brand-mark">R</span><span>RoboDash <small>CONTROL ROOM</small></span></a>
+      <div class="admin-actions">
+        <div class="who" id="who"></div>
+        <button class="btn emergency-action" id="quick-emergency" type="button">Start emergency video</button>
+        <a class="btn" href="/" target="_blank" rel="noopener">View dashboard</a>
+        <button class="btn danger" id="logout" type="button">Sign out</button>
+      </div>
+    </header>
+    <nav class="admin-nav" aria-label="Admin sections">
+      <a href="#live-stream">Live stream</a>
+      <a href="#emergency-video">Emergency video</a>
+      <a href="#event-timing">Event & timing</a>
+      <a href="#advertisements">Advertisements</a>
+      <a href="#teams">Teams</a>
+      <a href="#messages">Messages</a>
+      <a href="#organisation-news">Organisation</a>
+      <a href="#admin-users" id="users-nav">Admin users</a>
+    </nav>
+    <section class="admin-welcome">
+      <div><p class="eyebrow">LIVE EVENT CONTROL</p><h1>Dashboard management</h1><p>Update what appears on the public screen. Changes are saved without restarting the dashboard.</p></div>
+      <span class="live-indicator"><i></i> Connected</span>
+    </section>
+    <main class="content" id="panel"></main>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

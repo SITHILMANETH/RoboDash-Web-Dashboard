@@ -89,15 +89,47 @@
   /* ---------------- stream ---------------- */
   function renderStream(st) {
     const frame = $('#streamFrame');
+    const emergencyFrame = $('#emergencyFrame');
+    const emergencyVideo = $('#emergencyVideo');
     const want = st.stream.enabled && st.stream.embedUrl ? st.stream.embedUrl : '';
-    if (want) {
-      if (frame.dataset.src !== want) { frame.src = want; frame.dataset.src = want; } // only reload when the link changes
-      frame.hidden = false; $('#standby').hidden = true;
+    const emergency = st.emergencyVideo || {};
+    const emergencyUrl = emergency.enabled && emergency.embedUrl ? emergency.embedUrl : '';
+    const emergencyPath = emergency.enabled && emergency.videoPath ? emergency.videoPath : '';
+    const emergencyOn = !!(emergencyUrl || emergencyPath);
+
+    if (want && !emergencyOn) {
+      if (frame.getAttribute('src') !== want) frame.src = want;
+      frame.hidden = false;
     } else {
-      if (frame.dataset.src) { frame.removeAttribute('src'); delete frame.dataset.src; }
-      frame.hidden = true; $('#standby').hidden = false;
+      frame.removeAttribute('src');
+      frame.hidden = true;
     }
-    $('#liveBadge').hidden = !want;
+
+    if (emergencyOn && emergencyUrl) {
+      emergencyVideo.pause();
+      emergencyVideo.removeAttribute('src');
+      emergencyVideo.hidden = true;
+      if (emergencyFrame.getAttribute('src') !== emergencyUrl) emergencyFrame.src = emergencyUrl;
+      emergencyFrame.hidden = false;
+    } else if (emergencyOn && emergencyPath) {
+      emergencyFrame.removeAttribute('src');
+      emergencyFrame.hidden = true;
+      if (emergencyVideo.getAttribute('src') !== emergencyPath) emergencyVideo.src = emergencyPath;
+      emergencyVideo.hidden = false;
+      const playback = emergencyVideo.play();
+      if (playback && typeof playback.catch === 'function') playback.catch(() => {});
+    } else {
+      emergencyFrame.removeAttribute('src');
+      emergencyFrame.hidden = true;
+      emergencyVideo.pause();
+      emergencyVideo.removeAttribute('src');
+      emergencyVideo.hidden = true;
+    }
+    $('#standby').hidden = !!(want || emergencyOn);
+    const badge = $('#liveBadge');
+    badge.hidden = !(want || emergencyOn);
+    badge.classList.toggle('emergency', emergencyOn);
+    badge.querySelector('span').textContent = emergencyOn ? 'EMERGENCY' : 'LIVE';
     $('#standbyTitle').textContent = st.event.title || 'RoboDash';
     $('#standbyMsg').textContent = st.stream.standbyMessage || 'Live stream starting soon';
   }
@@ -151,7 +183,25 @@
     if (!ad) {
       s.classList.add('house');
       const b = el('b', '', $('#title').textContent); s.append(b, document.createTextNode('Live robotics competition'));
-    } else if (ad.image) {
+    } else if (ad.mediaType === 'youtube' && ad.videoEmbedUrl) {
+      const frame = el('iframe');
+      frame.src = ad.videoEmbedUrl;
+      frame.title = ad.title || 'Advertisement video';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture';
+      frame.loading = 'lazy';
+      s.append(frame);
+    } else if (ad.mediaType === 'upload' && ad.videoPath) {
+      const video = el('video');
+      video.src = ad.videoPath;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.controls = true;
+      s.append(video);
+      const playback = video.play();
+      if (playback && typeof playback.catch === 'function') playback.catch(() => {});
+    } else if (ad.mediaType === 'image' || (!ad.mediaType && ad.image)) {
       s.append(img(ad.image));
       if (ad.title || ad.label) { const c = el('div', 'cap'); if (ad.label) c.append(el('small', '', ad.label)); c.append(document.createTextNode(ad.title || '')); s.append(c); }
     } else {
@@ -255,7 +305,7 @@
   try { const c = localStorage.getItem(CACHE_KEY); if (c) apply(JSON.parse(c)); } catch { /* ignore */ }
 
   load();
-  setInterval(load, 60_000); // safety net in case the push connection is blocked
+  setInterval(load, 5_000);
   if ('EventSource' in window) {
     const es = new EventSource('/api/public/events');
     es.addEventListener('update', load);

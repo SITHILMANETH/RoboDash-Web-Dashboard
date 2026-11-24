@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>RoboDash · Sign in</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <main class="login">
+      <h1>RoboDash Control</h1>
+      <p class="sub">Sign in with your administrator account.</p>
+      <div class="err" id="err" hidden></div>
+      <form id="login-form">
+        <label for="username">Email or username</label>
+        <input id="username" name="username" type="text" autocomplete="username" maxlength="254" placeholder="Admin email (Cloudflare) or username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" placeholder="Enter your password" required>
+        <button class="btn primary login-submit" type="submit">Sign in</button>
+      </form>
+      <form id="invite-setup" hidden>
+        <p class="sub">Your invitation is verified. Choose a password for your administrator account.</p>
+        <label for="invite-password">New password</label>
+        <input id="invite-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="200" required>
+        <label for="invite-password-confirm">Confirm password</label>
+        <input id="invite-password-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="200" required>
+        <button class="btn primary login-submit" type="submit">Set password</button>
+      </form>
+    </main>
+  </div>
+  <script src="/admin/login.js"></script>
+</body>
+</html>
