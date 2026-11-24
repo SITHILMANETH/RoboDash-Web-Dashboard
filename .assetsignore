@@ -1,0 +1,13 @@
+/.git/
+/node_modules/
+/data/
+/uploads/
+/lib/
+/scripts/
+/src/
+/server.js
+/package.json
+/package-lock.json
+/README.md
+/.env
+/.env.example

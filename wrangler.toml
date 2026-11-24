@@ -1,0 +1,13 @@
+name = "robodash-web-dashboard"
+main = "src/worker.js"
+compatibility_date = "2026-11-24"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "robodash_db"
+database_name = "robodash-db"
+database_id = "5db226a5-1e28-4beb-af03-54d622c8d66e"
