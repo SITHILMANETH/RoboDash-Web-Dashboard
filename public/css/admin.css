@@ -73,3 +73,6 @@ select option { background: #0a1330; }
 .thumb img, .thumb .ph { flex: none; }
 .thumb .ph { text-align: center; line-height: 1.1; padding: .2rem; }
 .item > .check { margin-top: .2rem; }
+.action-block { cursor: grab; }
+.action-block.dragging { opacity: .45; cursor: grabbing; }
+.drag-handle { color: var(--muted); margin-right: .45rem; letter-spacing: -.15em; cursor: grab; }

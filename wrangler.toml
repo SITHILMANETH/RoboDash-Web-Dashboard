@@ -7,6 +7,10 @@ directory = "."
 binding = "ASSETS"
 run_worker_first = true
 
+[vars]
+GOOGLE_CLIENT_ID = "794264608590-t0d3n6uu510bgq7i719amqmbjvnn03ch.apps.googleusercontent.com"
+SUPER_ADMIN_EMAIL = "simaneth@gmail.com"
+
 [[d1_databases]]
 binding = "robodash_db"
 database_name = "robodash-db"

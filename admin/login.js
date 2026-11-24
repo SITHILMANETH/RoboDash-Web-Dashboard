@@ -1,22 +1,20 @@
 (() => {
   'use strict';
-  const form = document.getElementById('form');
   const err = document.getElementById('err');
-  const btn = document.getElementById('go');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    err.hidden = true; btn.disabled = true;
+  window.handleCredentialResponse = async (response) => {
+    err.hidden = true;
     try {
-      const r = await fetch('/api/auth/login', {
+      const r = await fetch('/api/auth/google', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: form.username.value, password: form.password.value })
+        body: JSON.stringify({ credential: response.credential })
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok) { location.href = '/admin'; return; }
-      err.textContent = data.error || 'Sign-in failed.'; err.hidden = false;
-      form.password.value = ''; form.password.focus();
+      err.textContent = data.pending
+        ? 'Your account is waiting for approval by simaneth@gmail.com.'
+        : (data.error || 'Google sign-in failed.');
+      err.hidden = false;
     } catch { err.textContent = 'Cannot reach the server.'; err.hidden = false; }
-    finally { btn.disabled = false; }
-  });
+  };
 })();

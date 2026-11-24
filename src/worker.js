@@ -16,7 +16,7 @@ function defaultState() {
       tickerSeconds: 8,
     },
     stream: {
-      enabled: false,
+      enabled: state.stream.enabled === true,
       muted: true,
       url: "",
       ref: null,
@@ -61,6 +61,16 @@ function defaultState() {
 
 function publicView(state) {
   const active = (items) => items.filter((item) => item.active);
+  let embedUrl = "";
+  try {
+    const streamUrl = new URL(state.stream.url || "");
+    if (streamUrl.hostname.includes("youtube.com") || streamUrl.hostname.includes("youtu.be")) {
+      const videoId = streamUrl.hostname.includes("youtu.be")
+        ? streamUrl.pathname.slice(1)
+        : streamUrl.searchParams.get("v");
+      if (videoId) embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+    }
+  } catch {}
   return {
     rev: state.rev,
     event: state.event,
@@ -69,7 +79,7 @@ function publicView(state) {
       enabled: false,
       title: state.stream.title,
       standbyMessage: state.stream.standbyMessage,
-      embedUrl: "",
+      embedUrl,
     },
     ticker: active(state.ticker),
     ads: active(state.ads),
@@ -78,9 +88,151 @@ function publicView(state) {
   };
 }
 
+function json(data, status = 200, headers = {}) {
+  return Response.json(data, { status, headers: { "Cache-Control": "no-store", ...headers } });
+}
+
+function getCookie(request, name) {
+  const cookie = request.headers.get("Cookie") || "";
+  const match = cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
+}
+
+function randomId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function getSession(request, env) {
+  const id = getCookie(request, "rd_session");
+  if (!id) return null;
+  const session = await env.robodash_db
+    .prepare("SELECT s.user_id, s.expires_at, u.email, u.name, u.avatar, u.role FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.id=?")
+    .bind(id)
+    .first();
+  if (!session || new Date(session.expires_at).getTime() <= Date.now()) return null;
+  return session;
+}
+
+async function verifyGoogleCredential(credential, env) {
+  const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+  if (!response.ok) throw new Error("Google could not verify this sign-in.");
+  const payload = await response.json();
+  if (payload.aud !== env.GOOGLE_CLIENT_ID) throw new Error("This sign-in was issued for a different application.");
+  if (!["accounts.google.com", "https://accounts.google.com"].includes(payload.iss)) throw new Error("Invalid Google sign-in issuer.");
+  if (payload.email_verified !== "true" && payload.email_verified !== true) throw new Error("Your Google email is not verified.");
+  if (!payload.exp || Number(payload.exp) * 1000 <= Date.now()) throw new Error("Your Google sign-in has expired.");
+  if (!payload.sub || !payload.email) throw new Error("Google did not return the required account details.");
+  return payload;
+}
+
+function noStoreAsset(request, env, path) {
+  return env.ASSETS.fetch(new Request(new URL(path, request.url), request));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const method = request.method;
+
+    if (url.pathname === "/api/auth/google" && method === "POST") {
+      try {
+        const body = await request.json();
+        const payload = await verifyGoogleCredential(String(body.credential || ""), env);
+        const email = payload.email.toLowerCase();
+        let user = await env.robodash_db.prepare("SELECT * FROM users WHERE google_subject=? OR email=?").bind(payload.sub, email).first();
+        if (!user) {
+          const id = crypto.randomUUID();
+          await env.robodash_db.prepare(
+            "INSERT INTO users (id,google_subject,email,name,avatar,role,approved_at,approved_by,created_at) VALUES (?,?,?,?,?,?,?,?,?)"
+          ).bind(
+            id, payload.sub, email, String(payload.name || email).slice(0, 100),
+            String(payload.picture || "").slice(0, 500),
+            email === env.SUPER_ADMIN_EMAIL.toLowerCase() ? "super_admin" : "pending",
+            email === env.SUPER_ADMIN_EMAIL.toLowerCase() ? new Date().toISOString() : "",
+            email === env.SUPER_ADMIN_EMAIL.toLowerCase() ? email : "",
+            new Date().toISOString()
+          ).run();
+          user = await env.robodash_db.prepare("SELECT * FROM users WHERE id=?").bind(id).first();
+        }
+        if (user.role === "pending") return json({ error: "Your account is waiting for super-admin approval.", pending: true }, 403);
+
+        const sessionId = randomId();
+        const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+        await env.robodash_db.prepare(
+          "INSERT INTO sessions (id,user_id,expires_at,created_at) VALUES (?,?,?,?)"
+        ).bind(sessionId, user.id, expiresAt, new Date().toISOString()).run();
+        await env.robodash_db.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(new Date().toISOString()).run();
+        return json(
+          { ok: true, user: { email: user.email, name: user.name, role: user.role } },
+          200,
+          { "Set-Cookie": `rd_session=${sessionId}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800` }
+        );
+      } catch (error) {
+        return json({ error: error.message || "Google sign-in failed." }, 401);
+      }
+    }
+
+    if (url.pathname === "/api/auth/me") {
+      const session = await getSession(request, env);
+      return session ? json({ email: session.email, name: session.name, role: session.role }) : json({ error: "Not signed in." }, 401);
+    }
+
+    if (url.pathname === "/api/auth/logout" && method === "POST") {
+      const id = getCookie(request, "rd_session");
+      if (id) await env.robodash_db.prepare("DELETE FROM sessions WHERE id=?").bind(id).run();
+      return json({ ok: true }, 200, { "Set-Cookie": "rd_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0" });
+    }
+
+    if (url.pathname === "/api/admin/state" && method === "GET") {
+      const session = await getSession(request, env);
+      if (!session || !["super_admin", "admin"].includes(session.role)) return json({ error: "Admin access required." }, 403);
+      let row = await env.robodash_db.prepare("SELECT value,revision FROM dashboard_state WHERE id=1").first();
+      if (!row) {
+        const state = defaultState();
+        await env.robodash_db.prepare(
+          "INSERT INTO dashboard_state (id,value,revision,updated_at) VALUES (1,?,?,?)"
+        ).bind(JSON.stringify(state), 1, new Date().toISOString()).run();
+        row = { value: JSON.stringify(state), revision: 1 };
+      }
+      return json(JSON.parse(row.value));
+    }
+
+    if (url.pathname === "/api/admin/state" && method === "PUT") {
+      const session = await getSession(request, env);
+      if (!session || !["super_admin", "admin"].includes(session.role)) return json({ error: "Admin access required." }, 403);
+      const origin = request.headers.get("Origin");
+      if (origin) {
+        const allowed = new URL(request.url).origin;
+        if (origin !== allowed) return json({ error: "Bad origin." }, 403);
+      }
+      const body = await request.json();
+      const state = { ...body, rev: (Number(body.rev) || 1) + 1 };
+      await env.robodash_db.prepare(
+        "INSERT INTO dashboard_state (id,value,revision,updated_at) VALUES (1,?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,revision=excluded.revision,updated_at=excluded.updated_at"
+      ).bind(JSON.stringify(state), state.rev, new Date().toISOString()).run();
+      return json(state);
+    }
+
+    if (url.pathname === "/api/admin/users" && method === "GET") {
+      const session = await getSession(request, env);
+      if (!session || session.role !== "super_admin") return json({ error: "Super-admin access required." }, 403);
+      const result = await env.robodash_db.prepare(
+        "SELECT id,email,name,avatar,role,approved_at,approved_by,created_at FROM users ORDER BY created_at DESC"
+      ).all();
+      return json({ users: result.results });
+    }
+
+    if (url.pathname === "/api/admin/users/approve" && method === "POST") {
+      const session = await getSession(request, env);
+      if (!session || session.role !== "super_admin") return json({ error: "Super-admin access required." }, 403);
+      const body = await request.json();
+      const role = body.role === "admin" ? "admin" : body.role === "super_admin" ? "super_admin" : "pending";
+      await env.robodash_db.prepare(
+        "UPDATE users SET role=?,approved_at=?,approved_by=? WHERE id=?"
+      ).bind(role, new Date().toISOString(), session.email, String(body.id || "")).run();
+      return json({ ok: true });
+    }
 
     if (url.pathname === "/api/public/state") {
       const row = await env.robodash_db
@@ -111,9 +263,17 @@ export default {
       return env.ASSETS.fetch(new Request(new URL("/public/index.html", request.url), request));
     }
     if (url.pathname === "/login") {
+      const session = await getSession(request, env);
+      if (session && ["super_admin", "admin"].includes(session.role)) {
+        return Response.redirect(new URL("/admin", request.url).toString(), 302);
+      }
       return env.ASSETS.fetch(new Request(new URL("/admin/login.html", request.url), request));
     }
     if (url.pathname === "/admin") {
+      const session = await getSession(request, env);
+      if (!session || !["super_admin", "admin"].includes(session.role)) {
+        return Response.redirect(new URL("/login", request.url).toString(), 302);
+      }
       return env.ASSETS.fetch(new Request(new URL("/admin/admin.html", request.url), request));
     }
     if (url.pathname === "/admin/admin.js") {
